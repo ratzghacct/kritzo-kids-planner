@@ -1,278 +1,295 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import BehaviorCard from './BehaviorCard';
-import AddBehaviorModal from './AddBehaviorModal';
-import GoalModal from './GoalModal';
-import GoalCompletedModal from './GoalCompletedModal';
-import { PlusCircle, TrendingUp, Award, History } from 'lucide-react';
+import BehaviorCard from '@/components/BehaviorCard';
+import GoalModal from '@/components/GoalModal';
+import GoalCompletedModal from '@/components/GoalCompletedModal';
+import AddBehaviorModal from '@/components/AddBehaviorModal';
+import { PlusIcon } from 'lucide-react';
 
-export interface Behavior {
+interface RewardsTabProps {
+  username: string;
+  onRequestParentAccess: (action: string) => void;
+}
+
+interface Goal {
   id: string;
+  title: string;
+  reward: string;
+  targetPoints: number;
+  completed: boolean;
+  dateCompleted?: string;
+  rewardPassed?: boolean;
+}
+
+interface Behavior {
   name: string;
   points: number;
   icon: string;
   type: 'positive' | 'negative';
 }
 
-export interface Goal {
-  id: string;
-  title: string;
-  reward: string;
-  pointsRequired: number;
-  isCompleted: boolean;
-  rewardGiven: boolean;
-}
-
-export interface RewardsTabProps {
-  username: string;
-  onRequestParentAccess: (action: string) => void;
-  isParentModeActive?: boolean;
-}
-
-const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess, isParentModeActive = false }) => {
+const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
+  const [points, setPoints] = useState(15);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showAddBehaviorModal, setShowAddBehaviorModal] = useState(false);
+  const [showGoalCompletedModal, setShowGoalCompletedModal] = useState(false);
+  const [currentGoal, setCurrentGoal] = useState<Goal>({
+    id: '1',
+    title: 'Be Super Helpful',
+    reward: 'Trip to the Park',
+    targetPoints: 30,
+    completed: false,
+  });
+  const [completedGoals, setCompletedGoals] = useState<Goal[]>([]);
+  
   const [behaviors, setBehaviors] = useState<Behavior[]>([
-    { id: '1', name: 'Clean Room', points: 10, icon: '🧹', type: 'positive' },
-    { id: '2', name: 'Read a Book', points: 15, icon: '📚', type: 'positive' },
-    { id: '3', name: 'Did Homework', points: 20, icon: '📝', type: 'positive' },
-    { id: '4', name: 'Late to Bed', points: -10, icon: '🌙', type: 'negative' },
-    { id: '5', name: 'Bad Attitude', points: -15, icon: '😠', type: 'negative' },
+    { name: 'Helped Clean', points: 3, icon: '🧹', type: 'positive' },
+    { name: 'Shared Toys', points: 2, icon: '🤝', type: 'positive' },
+    { name: 'Finished Homework', points: 5, icon: '📚', type: 'positive' },
+    { name: 'Was Kind', points: 2, icon: '💝', type: 'positive' },
+    { name: 'Fought with Sibling', points: -3, icon: '😤', type: 'negative' },
+    { name: 'Didn\'t Listen', points: -2, icon: '🙉', type: 'negative' },
+    { name: 'Made a Mess', points: -2, icon: '🗂️', type: 'negative' },
   ]);
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: '101', title: 'New Toy', reward: 'Lego Set', pointsRequired: 100, isCompleted: false, rewardGiven: false },
-    { id: '102', title: 'Movie Night', reward: 'Watch a Movie', pointsRequired: 80, isCompleted: false, rewardGiven: false },
-  ]);
-  const [points, setPoints] = useState(0);
-  const [isAddBehaviorModalOpen, setIsAddBehaviorModalOpen] = useState(false);
-  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
-  const [isGoalCompletedModalOpen, setIsGoalCompletedModalOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Load behaviors, goals, and points from local storage
-    const savedBehaviors = localStorage.getItem('behaviors');
-    const savedGoals = localStorage.getItem('goals');
-    const savedPoints = localStorage.getItem('points');
-    const savedHistory = localStorage.getItem('history');
-
-    if (savedBehaviors) setBehaviors(JSON.parse(savedBehaviors));
-    if (savedGoals) setGoals(JSON.parse(savedGoals));
-    if (savedPoints) setPoints(parseInt(savedPoints || '0'));
-    if (savedHistory) setHistory(JSON.parse(savedHistory || '[]'));
-  }, []);
-
-  useEffect(() => {
-    // Save behaviors, goals, and points to local storage
-    localStorage.setItem('behaviors', JSON.stringify(behaviors));
-    localStorage.setItem('goals', JSON.stringify(goals));
-    localStorage.setItem('points', points.toString());
-    localStorage.setItem('history', JSON.stringify(history));
-  }, [behaviors, goals, points, history]);
 
   const adjustPoints = (behaviorPoints: number) => {
-    const newPoints = points + behaviorPoints;
+    const newPoints = Math.max(0, points + behaviorPoints);
     setPoints(newPoints);
-
-    const behavior = behaviors.find((b) => b.points === behaviorPoints);
-    if (behavior) {
-      const action = behaviorPoints > 0 ? 'earned' : 'lost';
-      const newHistoryEntry = `${username} ${action} ${Math.abs(behaviorPoints)} points for ${behavior.name}`;
-      setHistory([newHistoryEntry, ...history]);
+    
+    // Check if goal is completed
+    if (newPoints >= currentGoal.targetPoints && !currentGoal.completed) {
+      const completedGoal = {
+        ...currentGoal,
+        completed: true,
+        dateCompleted: new Date().toLocaleDateString(),
+      };
+      
+      // Show completion modal
+      setCurrentGoal(completedGoal);
+      setShowGoalCompletedModal(true);
     }
   };
 
-  const addBehavior = (newBehavior: Behavior) => {
-    setBehaviors([...behaviors, newBehavior]);
-    setIsAddBehaviorModalOpen(false);
+  const handleSaveGoal = (goal: Goal) => {
+    if (currentGoal.completed) {
+      // If current goal is completed, add it to completed goals
+      setCompletedGoals(prev => [...prev, {
+        ...currentGoal,
+        rewardPassed: false // Mark as pending by default
+      }]);
+      
+      // Reset points for the new goal
+      setPoints(0);
+    }
+    
+    // Set the new current goal
+    setCurrentGoal({
+      ...goal,
+      completed: false,
+      dateCompleted: undefined,
+      rewardPassed: undefined
+    });
   };
 
-  const removeBehavior = (id: string) => {
-    setBehaviors(behaviors.filter(behavior => behavior.id !== id));
+  const handleAddBehavior = (behavior: Behavior) => {
+    setBehaviors(prev => [...prev, behavior]);
   };
 
-  const addGoal = (newGoal: Goal) => {
-    setGoals([...goals, { ...newGoal, id: Date.now().toString(), isCompleted: false, rewardGiven: false }]);
-    setIsGoalModalOpen(false);
-  };
-
-  const completeGoal = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setIsGoalCompletedModalOpen(true);
-  };
-
-  const giveReward = () => {
-    if (selectedGoal) {
-      const updatedGoals = goals.map(g =>
-        g.id === selectedGoal.id ? { ...g, isCompleted: true, rewardGiven: true } : g
-      );
-      setGoals(updatedGoals);
-      setPoints(points - selectedGoal.pointsRequired);
-
-      const newHistoryEntry = `${username} claimed reward: ${selectedGoal.reward} for ${selectedGoal.pointsRequired} points`;
-      setHistory([newHistoryEntry, ...history]);
-
-      setIsGoalCompletedModalOpen(false);
-      setSelectedGoal(null);
+  const handleGoalCompletion = (markAsGiven: boolean) => {
+    setShowGoalCompletedModal(false);
+    
+    const updatedGoal = {
+      ...currentGoal,
+      rewardPassed: markAsGiven
+    };
+    
+    // Add the completed goal to the list
+    setCompletedGoals(prev => [...prev, updatedGoal]);
+    
+    // Reset current goal and points
+    if (markAsGiven) {
+      // If marked as given, reset points and current goal
+      setPoints(0);
+      setCurrentGoal({
+        id: Date.now().toString(),
+        title: '',
+        reward: '',
+        targetPoints: 30,
+        completed: false
+      });
+      setShowGoalModal(true);
+    } else {
+      // If marked as pending, keep the goal as completed
+      setCurrentGoal(updatedGoal);
     }
   };
 
-  const resetGoal = (goal: Goal) => {
-    const updatedGoals = goals.map(g =>
-      g.id === goal.id ? { ...g, isCompleted: false, rewardGiven: false } : g
-    );
-    setGoals(updatedGoals);
+  const handleManageGoals = () => {
+    onRequestParentAccess('manage-goals');
+    setShowGoalModal(true);
   };
 
-  const calculateProgress = (goal: Goal) => {
-    return Math.min((points / goal.pointsRequired) * 100, 100);
+  const handleAddBehaviorClick = () => {
+    onRequestParentAccess('add-behavior');
+    setShowAddBehaviorModal(true);
   };
+
+  const progress = currentGoal.targetPoints > 0 ? Math.min(100, (points / currentGoal.targetPoints) * 100) : 0;
 
   return (
-    <div className="flex flex-col space-y-4 p-4">
+    <div className="space-y-6">
       {/* Points Display */}
-      <Card className="bg-gradient-pastel shadow-kid-friendly">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">
-            <TrendingUp className="mr-2 inline-block h-5 w-5 text-primary" />
-            Current Points: {points}
-          </CardTitle>
-        </CardHeader>
+      <Card className="p-6 bg-gradient-to-r from-yellow-200 to-orange-200 rounded-2xl shadow-lg border-0">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-orange-700 mb-2">Your Points</h2>
+          <div className="text-6xl font-bold text-orange-600 mb-2">{points}</div>
+          <div className="text-orange-600 font-bold">🌟 Keep it up!</div>
+        </div>
       </Card>
 
-      {/* Behaviors Section */}
-      <Card className="shadow-kid-friendly">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">
-            <PlusCircle className="mr-2 inline-block h-5 w-5 text-primary" />
-            Behaviors
-          </CardTitle>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                Add Behavior
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-md">
-              <SheetHeader>
-                <SheetTitle>Add New Behavior</SheetTitle>
-                <SheetDescription>
-                  Create a new behavior and assign points.
-                </SheetDescription>
-              </SheetHeader>
-              <AddBehaviorModal isOpen={isAddBehaviorModalOpen} onClose={() => setIsAddBehaviorModalOpen(false)} onAddBehavior={addBehavior} />
-            </SheetContent>
-          </Sheet>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[200px] w-full rounded-md">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {behaviors.map((behavior) => (
-                <BehaviorCard
-                  key={behavior.id}
-                  behavior={behavior}
-                  onAdjustPoints={adjustPoints}
-                  onRequestParentAccess={onRequestParentAccess}
-                  onRemove={removeBehavior}
-                  isParentModeActive={isParentModeActive}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Goals Section */}
-      <Card className="shadow-kid-friendly">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">
-            <Award className="mr-2 inline-block h-5 w-5 text-primary" />
-            Goals
-          </CardTitle>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                Add Goal
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-md">
-              <SheetHeader>
-                <SheetTitle>Add New Goal</SheetTitle>
-                <SheetDescription>
-                  Create a new goal and assign points required.
-                </SheetDescription>
-              </SheetHeader>
-              <GoalModal isOpen={isGoalModalOpen} onClose={() => setIsGoalModalOpen(false)} onAddGoal={addGoal} />
-            </SheetContent>
-          </Sheet>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[200px] w-full rounded-md">
-            <div className="space-y-4">
-              {goals.map((goal) => (
-                <Card key={goal.id} className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-md font-medium">{goal.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">Reward: {goal.reward}</p>
-                    <p className="text-sm text-muted-foreground">Points Required: {goal.pointsRequired}</p>
-                    <Progress value={calculateProgress(goal)} />
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <span>{points >= goal.pointsRequired ? 'Ready to Claim!' : `${goal.pointsRequired - points} points to go!`}</span>
-                    {goal.isCompleted ? (
-                      <Button variant="secondary" size="sm" onClick={() => resetGoal(goal)} disabled={isParentModeActive === false}>
-                        Reset Goal
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={() => completeGoal(goal)} disabled={points < goal.pointsRequired || isParentModeActive === false}>
-                        Claim Reward
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* History Section */}
-      <Card className="shadow-kid-friendly">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            <History className="mr-2 inline-block h-5 w-5 text-primary" />
-            History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[150px] w-full rounded-md">
-            <div className="space-y-2">
-              {history.map((entry, index) => (
-                <div key={index} className="text-sm">
-                  {entry}
-                  <Separator className="my-2" />
+      {/* Current Goal */}
+      <Card className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-purple-700">Current Goal</h3>
+          <Button
+            onClick={handleManageGoals}
+            className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl px-4 py-2 text-sm font-bold"
+          >
+            🎯 Add Goal
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          {currentGoal.title ? (
+            <>
+              <div className="text-center">
+                <h4 className="text-lg font-bold text-gray-800">{currentGoal.title}</h4>
+                <p className="text-purple-600 font-medium">Reward: {currentGoal.reward}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm font-bold">
+                  <span>{points} points</span>
+                  <span>{currentGoal.targetPoints} points</span>
                 </div>
-              ))}
+                <Progress value={progress} className="h-4 rounded-full" />
+              </div>
+              
+              {currentGoal.completed ? (
+                <div className="bg-green-100 p-4 rounded-xl text-center">
+                  <div className="text-2xl mb-2">🎉</div>
+                  <div className="font-bold text-green-700">Goal Complete!</div>
+                  <div className="text-green-600">
+                    {currentGoal.rewardPassed 
+                      ? "Reward has been given!" 
+                      : "Reward is pending."}
+                  </div>
+                  {!currentGoal.rewardPassed && (
+                    <Button
+                      onClick={() => onRequestParentAccess('confirm-reward')}
+                      className="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl"
+                    >
+                      Mark Reward As Given
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-600">
+                  {currentGoal.targetPoints - points} more points to go!
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p className="mb-4">No goal set yet. Add a goal to start earning rewards!</p>
+              <Button
+                onClick={handleManageGoals}
+                className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl px-4 py-2 font-bold"
+              >
+                🎯 Set Your First Goal
+              </Button>
             </div>
-          </ScrollArea>
-        </CardContent>
+          )}
+        </div>
       </Card>
 
-      {/* Goal Completed Modal */}
-      {selectedGoal && (
-        <GoalCompletedModal
-          isOpen={isGoalCompletedModalOpen}
-          onClose={() => setIsGoalCompletedModalOpen(false)}
-          goal={selectedGoal}
-          onGiveReward={giveReward}
-        />
+      {/* Behavior Tracking */}
+      <Card className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-purple-700">Track Behavior</h3>
+          <Button 
+            onClick={handleAddBehaviorClick}
+            size="sm"
+            className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl"
+          >
+            <PlusIcon className="mr-1 h-4 w-4" /> Add Behavior
+          </Button>
+        </div>
+        
+        <div className="space-y-3">
+          {behaviors.map((behavior, index) => (
+            <BehaviorCard
+              key={index}
+              behavior={behavior}
+              onAdjustPoints={adjustPoints}
+              onRequestParentAccess={onRequestParentAccess}
+            />
+          ))}
+        </div>
+      </Card>
+
+      {/* Completed Goals Log */}
+      {completedGoals.length > 0 && (
+        <Card className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0">
+          <h3 className="text-xl font-bold text-purple-700 mb-4">Completed Goals 🏆</h3>
+          <div className="space-y-3">
+            {completedGoals.map((goal) => (
+              <div key={goal.id} className="bg-green-50 p-4 rounded-xl border-2 border-green-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-bold text-green-700">{goal.title}</div>
+                    <div className="text-sm text-green-600">Reward: {goal.reward}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-green-600">
+                      {goal.rewardPassed ? "Reward Given ✓" : "Reward Pending"}
+                    </div>
+                    <div className="text-xs text-gray-500">{goal.dateCompleted}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
+
+      <GoalModal
+        isOpen={showGoalModal}
+        onClose={() => setShowGoalModal(false)}
+        currentGoal={currentGoal.completed ? {
+          id: Date.now().toString(),
+          title: '',
+          reward: '',
+          targetPoints: 30,
+          completed: false
+        } : currentGoal}
+        onSaveGoal={handleSaveGoal}
+      />
+
+      <GoalCompletedModal
+        isOpen={showGoalCompletedModal}
+        onClose={() => setShowGoalCompletedModal(false)}
+        goal={currentGoal}
+        onComplete={handleGoalCompletion}
+      />
+      
+      <AddBehaviorModal
+        isOpen={showAddBehaviorModal}
+        onClose={() => setShowAddBehaviorModal(false)}
+        onAdd={handleAddBehavior}
+      />
     </div>
   );
 };
