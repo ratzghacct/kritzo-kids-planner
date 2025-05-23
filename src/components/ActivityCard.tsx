@@ -9,6 +9,7 @@ interface Activity {
   icon: string;
   completed: boolean;
   time?: string;
+  day?: string;
 }
 
 interface ActivityCardProps {
@@ -35,6 +36,9 @@ const ActivityCard = ({ activity, onToggle, isLocked }: ActivityCardProps) => {
             </h3>
             {activity.time && (
               <p className="text-sm text-gray-600">{activity.time}</p>
+            )}
+            {activity.day && activity.day !== 'Monday' && (
+              <p className="text-xs text-blue-600 font-medium">{activity.day}</p>
             )}
           </div>
         </div>

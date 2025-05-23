@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PlannerTab from '@/components/PlannerTab';
 import RewardsTab from '@/components/RewardsTab';
 import ParentCodeModal from '@/components/ParentCodeModal';
+import { toast } from 'sonner';
 
 interface MainAppProps {
   username: string;
@@ -21,8 +22,27 @@ const MainApp = ({ username }: MainAppProps) => {
 
   const handleParentCodeSuccess = () => {
     setShowParentModal(false);
-    // Handle the parent action here
-    console.log('Parent access granted for:', parentAction);
+    
+    // Handle different parent actions
+    switch(parentAction) {
+      case 'lock-day':
+        toast.success("Day schedule locked successfully!");
+        break;
+      case 'manage-goals':
+        toast.success("Goals management unlocked!");
+        break;
+      case 'confirm-reward':
+        toast.success("Reward confirmed as given!");
+        break;
+      case 'add-holiday':
+        toast.success("Holiday added to calendar!");
+        break;
+      default:
+        if (parentAction.startsWith('adjust-points')) {
+          const behavior = parentAction.replace('adjust-points-', '');
+          toast.success(`${behavior} behavior recorded!`);
+        }
+    }
   };
 
   return (

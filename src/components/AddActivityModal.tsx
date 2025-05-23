@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface Activity {
   name: string;
@@ -15,6 +17,7 @@ interface AddActivityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (activity: Activity) => void;
+  showTimeSelector?: boolean;
 }
 
 const predefinedActivities = [
@@ -32,8 +35,17 @@ const predefinedActivities = [
   { name: 'Bath Time', icon: '🛁' },
 ];
 
-const AddActivityModal = ({ isOpen, onClose, onAdd }: AddActivityModalProps) => {
+const timeOptions = [
+  '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
+  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
+  '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM',
+  '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM',
+  '8:00 PM', '8:30 PM'
+];
+
+const AddActivityModal = ({ isOpen, onClose, onAdd, showTimeSelector = false }: AddActivityModalProps) => {
   const [selectedActivity, setSelectedActivity] = useState<typeof predefinedActivities[0] | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string>('');
 
   const handleAdd = () => {
     if (selectedActivity) {
@@ -41,8 +53,10 @@ const AddActivityModal = ({ isOpen, onClose, onAdd }: AddActivityModalProps) => 
         name: selectedActivity.name,
         icon: selectedActivity.icon,
         completed: false,
+        time: showTimeSelector ? selectedTime : undefined
       });
       setSelectedActivity(null);
+      setSelectedTime('');
       onClose();
     }
   };
@@ -76,6 +90,24 @@ const AddActivityModal = ({ isOpen, onClose, onAdd }: AddActivityModalProps) => 
             ))}
           </div>
           
+          {showTimeSelector && (
+            <div className="space-y-2">
+              <Label htmlFor="time" className="text-sm font-bold text-gray-700">
+                Select Time
+              </Label>
+              <Select value={selectedTime} onValueChange={setSelectedTime}>
+                <SelectTrigger id="time" className="w-full rounded-xl border-2 border-gray-200">
+                  <SelectValue placeholder="Select a time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((time) => (
+                    <SelectItem key={time} value={time}>{time}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="flex space-x-3">
             <Button
               onClick={onClose}
@@ -86,7 +118,7 @@ const AddActivityModal = ({ isOpen, onClose, onAdd }: AddActivityModalProps) => 
             </Button>
             <Button
               onClick={handleAdd}
-              disabled={!selectedActivity}
+              disabled={!selectedActivity || (showTimeSelector && !selectedTime)}
               className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold"
             >
               Add Activity

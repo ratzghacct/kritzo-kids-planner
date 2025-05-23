@@ -18,6 +18,7 @@ interface Goal {
   targetPoints: number;
   completed: boolean;
   dateCompleted?: string;
+  rewardPassed?: boolean;
 }
 
 const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
@@ -33,13 +34,13 @@ const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
   const [completedGoals, setCompletedGoals] = useState<Goal[]>([]);
 
   const behaviors = [
-    { name: 'Helped Clean', points: 3, icon: '🧹', type: 'positive' },
-    { name: 'Shared Toys', points: 2, icon: '🤝', type: 'positive' },
-    { name: 'Finished Homework', points: 5, icon: '📚', type: 'positive' },
-    { name: 'Was Kind', points: 2, icon: '💝', type: 'positive' },
-    { name: 'Fought with Sibling', points: -3, icon: '😤', type: 'negative' },
-    { name: 'Didn\'t Listen', points: -2, icon: '🙉', type: 'negative' },
-    { name: 'Made a Mess', points: -2, icon: '🗂️', type: 'negative' },
+    { name: 'Helped Clean', points: 3, icon: '🧹', type: 'positive' as const },
+    { name: 'Shared Toys', points: 2, icon: '🤝', type: 'positive' as const },
+    { name: 'Finished Homework', points: 5, icon: '📚', type: 'positive' as const },
+    { name: 'Was Kind', points: 2, icon: '💝', type: 'positive' as const },
+    { name: 'Fought with Sibling', points: -3, icon: '😤', type: 'negative' as const },
+    { name: 'Didn\'t Listen', points: -2, icon: '🙉', type: 'negative' as const },
+    { name: 'Made a Mess', points: -2, icon: '🗂️', type: 'negative' as const },
   ];
 
   const adjustPoints = (behaviorPoints: number) => {
@@ -76,10 +77,10 @@ const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-purple-700">Current Goal</h3>
           <Button
-            onClick={() => onRequestParentAccess('manage-goals')}
+            onClick={() => setShowGoalModal(true)}
             className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl px-4 py-2 text-sm font-bold"
           >
-            🎯 Manage
+            🎯 Manage Goals
           </Button>
         </div>
         
@@ -102,6 +103,12 @@ const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
               <div className="text-2xl mb-2">🎉</div>
               <div className="font-bold text-green-700">Goal Complete!</div>
               <div className="text-green-600">You earned your reward!</div>
+              <Button
+                onClick={() => onRequestParentAccess('confirm-reward')}
+                className="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl"
+              >
+                Mark Reward As Given
+              </Button>
             </div>
           ) : (
             <div className="text-center text-gray-600">
@@ -143,7 +150,9 @@ const RewardsTab = ({ username, onRequestParentAccess }: RewardsTabProps) => {
                     <div className="text-sm text-green-600">Reward: {goal.reward}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-green-600">Completed</div>
+                    <div className="text-sm text-green-600">
+                      {goal.rewardPassed ? "Reward Given ✓" : "Completed"}
+                    </div>
                     <div className="text-xs text-gray-500">{goal.dateCompleted}</div>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ interface Goal {
   targetPoints: number;
   completed: boolean;
   dateCompleted?: string;
+  rewardPassed?: boolean;
 }
 
 interface GoalModalProps {
@@ -34,6 +35,7 @@ const GoalModal = ({ isOpen, onClose, currentGoal, onSaveGoal }: GoalModalProps)
       targetPoints: parseInt(targetPoints) || 30,
       completed: false,
       dateCompleted: undefined,
+      rewardPassed: undefined,
     });
     onClose();
   };
