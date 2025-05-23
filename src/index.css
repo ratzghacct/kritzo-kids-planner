@@ -1,5 +1,17 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import '@fontsource/quicksand/300.css';
+@import '@fontsource/quicksand/400.css';
+@import '@fontsource/quicksand/500.css';
+@import '@fontsource/quicksand/700.css';
+@import '@fontsource/baloo-2/400.css';
+@import '@fontsource/baloo-2/500.css';
+@import '@fontsource/baloo-2/600.css';
+@import '@fontsource/baloo-2/700.css';
+@import '@fontsource/poppins/300.css';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
 
 @tailwind base;
 @tailwind components;
@@ -7,89 +19,83 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 190 30% 97%;
+    --foreground: 235 25% 27%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 235 25% 27%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 235 25% 27%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 175 70% 41%;
+    --primary-foreground: 355 100% 99%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 335 80% 83%;
+    --secondary-foreground: 340 40% 28%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 190 15% 90%;
+    --muted-foreground: 235 7% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 260 50% 80%;
+    --accent-foreground: 265 40% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 180 15% 85%;
+    --input: 180 15% 85%;
+    --ring: 175 70% 41%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 190 30% 97%;
+    --sidebar-foreground: 235 25% 27%;
+    --sidebar-primary: 175 70% 41%;
+    --sidebar-primary-foreground: 355 100% 99%;
+    --sidebar-accent: 260 50% 80%;
+    --sidebar-accent-foreground: 265 40% 30%;
+    --sidebar-border: 180 15% 85%;
+    --sidebar-ring: 175 70% 41%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 235 25% 15%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 235 25% 20%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 235 25% 20%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 175 70% 41%;
+    --primary-foreground: 355 100% 99%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 335 30% 55%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 235 18% 25%;
+    --muted-foreground: 235 7% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 260 30% 45%;
+    --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 235 18% 25%;
+    --input: 235 18% 25%;
+    --ring: 175 70% 41%;
+
+    --sidebar-background: 235 25% 15%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 175 70% 41%;
+    --sidebar-primary-foreground: 355 100% 99%;
+    --sidebar-accent: 260 30% 45%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 235 18% 25%;
+    --sidebar-ring: 175 70% 41%;
   }
 }
 
@@ -99,29 +105,65 @@
   }
 
   body {
-    @apply bg-background text-foreground font-montserrat;
+    @apply bg-background text-foreground font-quicksand;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-playfair;
+    @apply font-baloo;
   }
 
   button, .btn {
-    @apply font-poppins;
+    @apply font-quicksand;
   }
 
   input, textarea, select {
-    @apply shadow-sm font-montserrat;
+    @apply shadow-sm font-quicksand rounded-xl;
   }
 }
 
 /* Enhanced Card Styles */
 .card {
-  @apply transition-all duration-200 hover:shadow-card-hover;
+  @apply transition-all duration-200 hover:shadow-card-hover rounded-xl;
 }
 
 /* Enhanced Button Styles */
 .btn-premium {
-  @apply bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md transition-all duration-300 
-  hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 active:scale-95;
+  @apply bg-gradient-to-r from-accent to-primary text-white shadow-md transition-all duration-300 
+  hover:shadow-lg hover:from-accent/90 hover:to-primary/90 active:scale-95 rounded-xl;
+}
+
+/* Animations for kids-friendly UI */
+.bounce-in {
+  @apply animate-bounce-in;
+}
+
+.wiggle {
+  @apply animate-wiggle;
+}
+
+.pop {
+  @apply animate-pop;
+}
+
+/* Custom scrollbar for a more modern feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/50 rounded-full transition-all;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/70;
+}
+
+/* Footer styles */
+.app-footer {
+  @apply mt-auto py-4 px-6 text-center text-sm text-muted-foreground border-t border-border;
 }
