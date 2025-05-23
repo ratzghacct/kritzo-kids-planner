@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Lock, Unlock } from 'lucide-react';
 import PlannerTab from '@/components/PlannerTab';
 import RewardsTab from '@/components/RewardsTab';
 import ParentCodeModal from '@/components/ParentCodeModal';
@@ -21,6 +21,7 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
   const [parentCode, setParentCode] = useState<string>(() => {
     return localStorage.getItem('parentCode') || '';
   });
+  const [isParentModeActive, setIsParentModeActive] = useState(false);
   const [rewardsTabVisited, setRewardsTabVisited] = useState(false);
 
   useEffect(() => {
@@ -34,15 +35,20 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
   }, [parentCode, username]);
 
   const requestParentAccess = (action: string) => {
+    // If parent mode is already active, execute the action directly
+    if (isParentModeActive) {
+      executeParentAction(action);
+      return;
+    }
+
+    // Otherwise, request parent verification
     setParentAction(action);
     setShowParentModal(true);
   };
 
-  const handleParentCodeSuccess = () => {
-    setShowParentModal(false);
-    
+  const executeParentAction = (action: string) => {
     // Handle different parent actions
-    switch(parentAction) {
+    switch(action) {
       case 'lock-day':
         toast.success("Day schedule locked successfully!");
         break;
@@ -55,14 +61,29 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
       case 'add-holiday':
         toast.success("Holiday added to calendar!");
         break;
+      case 'parent-mode-toggle':
+        setIsParentModeActive(!isParentModeActive);
+        toast.success(isParentModeActive ? "Parent mode deactivated" : "Parent mode activated");
+        break;
       case 'change-code':
         setShowSetupModal(true);
         break;
       default:
-        if (parentAction.startsWith('adjust-points')) {
-          const behavior = parentAction.replace('adjust-points-', '');
+        if (action.startsWith('adjust-points')) {
+          const behavior = action.replace('adjust-points-', '');
           toast.success(`${behavior} behavior recorded!`);
         }
+    }
+  };
+
+  const handleParentCodeSuccess = () => {
+    setShowParentModal(false);
+    
+    if (parentAction === 'parent-mode-toggle') {
+      setIsParentModeActive(true);
+      toast.success("Parent mode activated");
+    } else {
+      executeParentAction(parentAction);
     }
   };
 
@@ -70,7 +91,8 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
     setActiveTab(value);
     
     // Show parent modal on first visit to rewards tab if parent code exists
-    if (value === 'rewards' && !rewardsTabVisited && parentCode) {
+    // and parent mode is not active
+    if (value === 'rewards' && !rewardsTabVisited && parentCode && !isParentModeActive) {
       setRewardsTabVisited(true);
       setParentAction('access-rewards');
       setShowParentModal(true);
@@ -90,20 +112,38 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-center py-6 flex-grow">
-            <h1 className="text-3xl font-bold text-purple-700 mb-2">
+            <h1 className="text-3xl font-bold text-purple-700 mb-2 font-playfair">
               Welcome back, {username}! 👋
             </h1>
             <p className="text-purple-600 font-medium">Ready to plan your awesome day?</p>
           </div>
           <div className="flex flex-col space-y-2">
             <Button
-              onClick={() => requestParentAccess('change-code')}
+              onClick={() => requestParentAccess('parent-mode-toggle')}
               variant="outline"
               size="sm"
-              className="rounded-lg text-xs"
+              className="rounded-lg text-xs flex items-center gap-2"
             >
-              Change Parent Code
+              {isParentModeActive ? (
+                <>
+                  <Unlock size={14} /> Lock Parent Mode
+                </>
+              ) : (
+                <>
+                  <Lock size={14} /> Unlock Parent Mode
+                </>
+              )}
             </Button>
+            {isParentModeActive && (
+              <Button
+                onClick={() => requestParentAccess('change-code')}
+                variant="outline"
+                size="sm"
+                className="rounded-lg text-xs"
+              >
+                Change Parent Code
+              </Button>
+            )}
           </div>
         </div>
 
@@ -125,11 +165,19 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
           </TabsList>
 
           <TabsContent value="planner" className="space-y-4">
-            <PlannerTab username={username} onRequestParentAccess={requestParentAccess} />
+            <PlannerTab 
+              username={username} 
+              onRequestParentAccess={requestParentAccess} 
+              isParentModeActive={isParentModeActive} 
+            />
           </TabsContent>
 
           <TabsContent value="rewards" className="space-y-4">
-            <RewardsTab username={username} onRequestParentAccess={requestParentAccess} />
+            <RewardsTab 
+              username={username} 
+              onRequestParentAccess={requestParentAccess} 
+              isParentModeActive={isParentModeActive} 
+            />
           </TabsContent>
         </Tabs>
 
@@ -148,6 +196,11 @@ const MainApp = ({ username, onLogout }: MainAppProps) => {
           onClose={() => setShowSetupModal(false)}
           onSetupCode={handleSetupCode}
         />
+
+        {/* Footer */}
+        <footer className="mt-10 py-6 border-t border-purple-200/50 text-center text-sm text-purple-600">
+          <p>Created by Rathish. Copyright reserved 2025, made in Germany.</p>
+        </footer>
       </div>
     </div>
   );

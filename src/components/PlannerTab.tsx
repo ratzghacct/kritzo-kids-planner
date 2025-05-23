@@ -3,14 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrashIcon } from 'lucide-react';
 import ActivityCard from '@/components/ActivityCard';
 import AddActivityModal from '@/components/AddActivityModal';
 import AddHolidayModal from '@/components/AddHolidayModal';
-import { TrashIcon } from 'lucide-react';
 
 interface PlannerTabProps {
   username: string;
   onRequestParentAccess: (action: string) => void;
+  isParentModeActive?: boolean;
 }
 
 interface Activity {
@@ -31,7 +32,7 @@ interface Holiday {
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
+const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = false }: PlannerTabProps) => {
   const [viewType, setViewType] = useState('day');
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [showAddHoliday, setShowAddHoliday] = useState(false);
@@ -39,20 +40,48 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[0]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [holidays, setHolidays] = useState<Holiday[]>([
-    { id: '1', name: 'Christmas Day', date: '12/25/2024', icon: '🎄' },
-    { id: '2', name: 'Halloween', date: '10/31/2024', icon: '🎃' }
-  ]);
+  
+  // Load holidays from localStorage or use defaults
+  const [holidays, setHolidays] = useState<Holiday[]>(() => {
+    const savedHolidays = localStorage.getItem('holidays');
+    return savedHolidays 
+      ? JSON.parse(savedHolidays) 
+      : [
+          { id: '1', name: 'Christmas Day', date: '12/25/2024', icon: '🎄' },
+          { id: '2', name: 'Halloween', date: '10/31/2024', icon: '🎃' }
+        ];
+  });
   
   // Separate activities for today and week views
-  const [todayActivities, setTodayActivities] = useState<Activity[]>([
-    { id: '1', name: 'Morning Reading', icon: '📚', completed: false, time: '9:00 AM' },
-    { id: '2', name: 'Snack Time', icon: '🍎', completed: false, time: '10:30 AM' },
-    { id: '3', name: 'Drawing', icon: '🎨', completed: true, time: '2:00 PM' },
-    { id: '4', name: 'Clean Up Room', icon: '🧹', completed: false, time: '4:00 PM' },
-  ]);
+  const [todayActivities, setTodayActivities] = useState<Activity[]>(() => {
+    const savedActivities = localStorage.getItem('todayActivities');
+    return savedActivities 
+      ? JSON.parse(savedActivities) 
+      : [
+          { id: '1', name: 'Morning Reading', icon: '📚', completed: false, time: '9:00 AM' },
+          { id: '2', name: 'Snack Time', icon: '🍎', completed: false, time: '10:30 AM' },
+          { id: '3', name: 'Drawing', icon: '🎨', completed: true, time: '2:00 PM' },
+          { id: '4', name: 'Clean Up Room', icon: '🧹', completed: false, time: '4:00 PM' },
+        ];
+  });
   
-  const [weekActivities, setWeekActivities] = useState<Activity[]>([]);
+  const [weekActivities, setWeekActivities] = useState<Activity[]>(() => {
+    const savedActivities = localStorage.getItem('weekActivities');
+    return savedActivities ? JSON.parse(savedActivities) : [];
+  });
+
+  // Save activities and holidays to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('todayActivities', JSON.stringify(todayActivities));
+  }, [todayActivities]);
+
+  useEffect(() => {
+    localStorage.setItem('weekActivities', JSON.stringify(weekActivities));
+  }, [weekActivities]);
+
+  useEffect(() => {
+    localStorage.setItem('holidays', JSON.stringify(holidays));
+  }, [holidays]);
 
   const toggleActivity = (id: string) => {
     if (!isLocked) {
@@ -93,12 +122,14 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
 
   const lockDay = () => {
     onRequestParentAccess('lock-day');
-    // For demo, we'll lock immediately
-    setIsLocked(true);
+    // For demo, we'll lock immediately if parent mode is active
+    if (isParentModeActive) {
+      setIsLocked(true);
+    }
   };
 
   const copyTodayToWeek = () => {
-    // Copy today's activities to each day of the week
+    // Copy today's activities to each day of the week - but only for the weekly view
     const newWeekActivities = [...weekActivities];
     
     daysOfWeek.forEach((day) => {
@@ -123,10 +154,17 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
     setHolidays(prev => [...prev, newHoliday]);
   };
 
+  const removeHoliday = (id: string) => {
+    setHolidays(prev => prev.filter(holiday => holiday.id !== id));
+  };
+
   const requestAddHoliday = () => {
-    onRequestParentAccess('add-holiday');
-    // After parent code verification, show holiday modal
-    setShowAddHoliday(true);
+    if (isParentModeActive) {
+      setShowAddHoliday(true);
+    } else {
+      onRequestParentAccess('add-holiday');
+      // After parent code verification, show holiday modal if parent mode is active
+    }
   };
 
   // Get activities for the current view
@@ -137,34 +175,62 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
   const allActivitiesComplete = currentActivities.length > 0 && 
     currentActivities.every(activity => activity.completed);
 
-  // Get day numbers with activities for month view
+  // Get days with activities for month view
   const getDaysWithActivities = () => {
-    const days = new Set<number>();
+    const days = new Map<number, { hasActivities: boolean, holidays: Holiday[] }>();
+    
+    // Initialize days in the month
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.set(i, { hasActivities: false, holidays: [] });
+    }
     
     // Add days from today's activities
     todayActivities.forEach(activity => {
-      if (activity.time) {
-        const date = new Date(activity.time);
-        if (date.getMonth() === selectedMonth && date.getFullYear() === selectedYear) {
-          days.add(date.getDate());
+      // For demo purposes, mark current day as having activities
+      const currentDay = new Date().getDate();
+      if (days.has(currentDay)) {
+        const dayInfo = days.get(currentDay);
+        if (dayInfo) {
+          days.set(currentDay, { ...dayInfo, hasActivities: true });
         }
       }
     });
     
     // Add days from week activities
     weekActivities.forEach(activity => {
-      if (activity.time) {
-        const date = new Date(activity.time);
-        if (date.getMonth() === selectedMonth && date.getFullYear() === selectedYear) {
-          days.add(date.getDate());
+      // For demo purposes, mark days 1-7 as having activities for week view
+      for (let i = 1; i <= 7; i++) {
+        if (days.has(i)) {
+          const dayInfo = days.get(i);
+          if (dayInfo) {
+            days.set(i, { ...dayInfo, hasActivities: true });
+          }
         }
       }
     });
     
-    return Array.from(days);
+    // Add holidays
+    holidays.forEach(holiday => {
+      const date = new Date(holiday.date);
+      if (date.getMonth() === selectedMonth && date.getFullYear() === selectedYear) {
+        const day = date.getDate();
+        if (days.has(day)) {
+          const dayInfo = days.get(day);
+          if (dayInfo) {
+            days.set(day, { 
+              ...dayInfo, 
+              holidays: [...dayInfo.holidays, holiday]
+            });
+          }
+        }
+      }
+    });
+    
+    return days;
   };
 
-  const daysWithActivities = getDaysWithActivities();
+  const daysWithActivitiesMap = getDaysWithActivities();
 
   return (
     <div className="space-y-6">
@@ -182,7 +248,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
       {/* Current View Display */}
       <Card className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-purple-700">
+          <h2 className="text-2xl font-bold text-purple-700 font-playfair">
             {viewType === 'day' && 'Today\'s Schedule'}
             {viewType === 'week' && 'This Week'}
             {viewType === 'month' && 'This Month'}
@@ -221,7 +287,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
               <div className="space-y-3">
                 <Button
                   onClick={() => setShowAddActivity(true)}
-                  className="w-full h-16 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg"
+                  className="w-full h-16 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg"
                 >
                   ➕ Add New Activity
                 </Button>
@@ -244,7 +310,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
                     onClick={lockDay}
                     className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-xl"
                   >
-                    🔒 Lock Day (Parent)
+                    🔒 Lock Day {isParentModeActive ? '' : '(Parent)'}
                   </Button>
                 </div>
               </Card>
@@ -305,7 +371,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
               {!isLocked && (
                 <Button
                   onClick={() => setShowAddActivity(true)}
-                  className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg"
+                  className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg"
                 >
                   ➕ Add Activity for {selectedDay}
                 </Button>
@@ -317,7 +383,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
         {viewType === 'month' && (
           <div className="space-y-4">
             <div className="text-center mb-4">
-              <h3 className="text-xl font-bold text-purple-700">
+              <h3 className="text-xl font-bold text-purple-700 font-playfair">
                 {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'long' })} {selectedYear}
               </h3>
             </div>
@@ -327,33 +393,47 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
                 <div key={day} className="text-center font-bold text-purple-700">{day}</div>
               ))}
               
-              {Array.from({ length: 35 }, (_, i) => {
+              {Array.from({ length: 31 }, (_, i) => {
                 const day = i + 1;
-                const hasActivities = daysWithActivities.includes(day);
+                const dayInfo = daysWithActivitiesMap.get(day);
                 
-                const holiday = holidays.find(h => {
-                  const date = new Date(h.date);
-                  return date.getDate() === day && date.getMonth() === selectedMonth;
-                });
+                if (!dayInfo || day > new Date(selectedYear, selectedMonth + 1, 0).getDate()) {
+                  return (
+                    <div key={i} className="p-2 min-h-20"></div>
+                  );
+                }
+                
+                const hasActivities = dayInfo.hasActivities;
+                const dayHolidays = dayInfo.holidays;
                 
                 return (
                   <Card 
                     key={i} 
                     className={`p-2 min-h-20 ${
                       hasActivities ? 'bg-blue-50 border-2 border-blue-200' : 
-                      holiday ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-gray-50'
+                      dayHolidays.length > 0 ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-gray-50'
                     }`}
                   >
-                    <div className="text-sm font-bold">{day <= 31 ? day : ''}</div>
-                    {holiday && (
-                      <div className="mt-1">
+                    <div className="text-sm font-bold">{day}</div>
+                    {dayHolidays.length > 0 && dayHolidays.map(holiday => (
+                      <div key={holiday.id} className="mt-1 relative group">
                         <div className="text-lg">{holiday.icon}</div>
                         <div className="text-xs font-medium text-yellow-700">{holiday.name}</div>
+                        {isParentModeActive && (
+                          <button 
+                            onClick={() => removeHoliday(holiday.id)}
+                            className="absolute -right-1 -top-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
-                    )}
+                    ))}
                     {hasActivities && (
                       <div className="flex justify-center mt-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                          !
+                        </div>
                       </div>
                     )}
                   </Card>
@@ -365,7 +445,7 @@ const PlannerTab = ({ username, onRequestParentAccess }: PlannerTabProps) => {
               onClick={requestAddHoliday}
               className="w-full h-12 text-md font-bold rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white shadow-md"
             >
-              🎊 Add Holiday (Parent)
+              🎊 Add Holiday {isParentModeActive ? '' : '(Parent)'}
             </Button>
           </div>
         )}

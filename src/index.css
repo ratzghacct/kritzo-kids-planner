@@ -1,3 +1,6 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,6 +99,29 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-montserrat;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
+  }
+
+  button, .btn {
+    @apply font-poppins;
+  }
+
+  input, textarea, select {
+    @apply shadow-sm font-montserrat;
+  }
+}
+
+/* Enhanced Card Styles */
+.card {
+  @apply transition-all duration-200 hover:shadow-card-hover;
+}
+
+/* Enhanced Button Styles */
+.btn-premium {
+  @apply bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md transition-all duration-300 
+  hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 active:scale-95;
 }

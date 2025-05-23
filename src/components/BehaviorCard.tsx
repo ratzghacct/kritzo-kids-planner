@@ -2,8 +2,10 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TrashIcon } from 'lucide-react';
 
 interface Behavior {
+  id: string;
   name: string;
   points: number;
   icon: string;
@@ -14,14 +16,34 @@ interface BehaviorCardProps {
   behavior: Behavior;
   onAdjustPoints: (points: number) => void;
   onRequestParentAccess: (action: string) => void;
+  onRemove?: (id: string) => void;
+  isParentModeActive?: boolean;
 }
 
-const BehaviorCard = ({ behavior, onAdjustPoints, onRequestParentAccess }: BehaviorCardProps) => {
+const BehaviorCard = ({ 
+  behavior, 
+  onAdjustPoints, 
+  onRequestParentAccess,
+  onRemove,
+  isParentModeActive = false
+}: BehaviorCardProps) => {
   const handleClick = () => {
-    onRequestParentAccess(`adjust-points-${behavior.name}`);
-    // For demo purposes, we'll adjust points immediately
-    // In a real app, this would happen after parent code verification
-    setTimeout(() => onAdjustPoints(behavior.points), 100);
+    if (isParentModeActive) {
+      // If parent mode is active, adjust points directly
+      onAdjustPoints(behavior.points);
+    } else {
+      onRequestParentAccess(`adjust-points-${behavior.name}`);
+      // For demo purposes, we'll adjust points immediately
+      // In a real app, this would happen after parent code verification
+      setTimeout(() => onAdjustPoints(behavior.points), 100);
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemove) {
+      onRemove(behavior.id);
+    }
   };
 
   return (
@@ -30,11 +52,11 @@ const BehaviorCard = ({ behavior, onAdjustPoints, onRequestParentAccess }: Behav
         ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200 hover:border-green-300' 
         : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200 hover:border-red-300'
     }`}>
-      <Button
-        onClick={handleClick}
-        className="w-full h-auto p-0 bg-transparent hover:bg-transparent text-left"
-      >
-        <div className="flex items-center justify-between w-full">
+      <div className="flex justify-between items-center w-full">
+        <Button
+          onClick={handleClick}
+          className="flex-grow h-auto p-0 bg-transparent hover:bg-transparent text-left"
+        >
           <div className="flex items-center space-x-4">
             <div className="text-3xl">{behavior.icon}</div>
             <div>
@@ -50,7 +72,9 @@ const BehaviorCard = ({ behavior, onAdjustPoints, onRequestParentAccess }: Behav
               </div>
             </div>
           </div>
-          
+        </Button>
+        
+        <div className="flex items-center">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${
             behavior.type === 'positive'
               ? 'bg-green-500 text-white'
@@ -58,8 +82,19 @@ const BehaviorCard = ({ behavior, onAdjustPoints, onRequestParentAccess }: Behav
           }`}>
             {behavior.type === 'positive' ? '+' : '-'}
           </div>
+          
+          {isParentModeActive && onRemove && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRemove}
+              className="ml-2 text-red-500 hover:bg-red-100 h-10 w-10 rounded-full p-0"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-      </Button>
+      </div>
     </Card>
   );
 };
