@@ -47,11 +47,11 @@ const BehaviorCard = ({
   };
 
   return (
-    <Card className={`p-4 rounded-2xl border-2 transition-all hover:scale-105 ${
+    <Card className={`p-4 rounded-2xl border-2 transition-all hover:scale-102 ${
       behavior.type === 'positive' 
-        ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200 hover:border-green-300' 
-        : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200 hover:border-red-300'
-    }`}>
+        ? 'bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 hover:border-primary/30' 
+        : 'bg-gradient-to-r from-secondary/10 to-destructive/10 border-secondary/20 hover:border-secondary/30'
+    } hover:shadow-kid-friendly`}>
       <div className="flex justify-between items-center w-full">
         <Button
           onClick={handleClick}
@@ -61,12 +61,12 @@ const BehaviorCard = ({
             <div className="text-3xl">{behavior.icon}</div>
             <div>
               <div className={`font-bold text-lg ${
-                behavior.type === 'positive' ? 'text-green-700' : 'text-red-700'
+                behavior.type === 'positive' ? 'text-primary-foreground/90 bg-primary px-3 py-1 rounded-lg' : 'text-secondary-foreground/90 bg-secondary px-3 py-1 rounded-lg'
               }`}>
                 {behavior.name}
               </div>
-              <div className={`text-sm font-medium ${
-                behavior.type === 'positive' ? 'text-green-600' : 'text-red-600'
+              <div className={`text-sm font-medium mt-1 ${
+                behavior.type === 'positive' ? 'text-primary' : 'text-secondary-foreground'
               }`}>
                 {behavior.points > 0 ? '+' : ''}{behavior.points} points
               </div>
@@ -75,10 +75,10 @@ const BehaviorCard = ({
         </Button>
         
         <div className="flex items-center">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-kid-friendly ${
             behavior.type === 'positive'
-              ? 'bg-green-500 text-white'
-              : 'bg-red-500 text-white'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground'
           }`}>
             {behavior.type === 'positive' ? '+' : '-'}
           </div>
@@ -88,7 +88,7 @@ const BehaviorCard = ({
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              className="ml-2 text-red-500 hover:bg-red-100 h-10 w-10 rounded-full p-0"
+              className="ml-2 text-destructive hover:bg-destructive/10 h-10 w-10 rounded-full p-0"
             >
               <TrashIcon className="h-4 w-4" />
             </Button>
