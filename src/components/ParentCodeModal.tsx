@@ -9,13 +9,12 @@ interface ParentCodeModalProps {
   onClose: () => void;
   onSuccess: () => void;
   action: string;
+  correctCode: string;
 }
 
-const ParentCodeModal = ({ isOpen, onClose, onSuccess, action }: ParentCodeModalProps) => {
+const ParentCodeModal = ({ isOpen, onClose, onSuccess, action, correctCode }: ParentCodeModalProps) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-
-  const correctCode = '1234'; // In a real app, this would be configurable
 
   const handleSubmit = () => {
     if (code === correctCode) {
@@ -34,6 +33,29 @@ const ParentCodeModal = ({ isOpen, onClose, onSuccess, action }: ParentCodeModal
     onClose();
   };
 
+  const getActionDescription = () => {
+    switch(action) {
+      case 'lock-day':
+        return 'Lock day schedule';
+      case 'manage-goals':
+        return 'Manage goals';
+      case 'confirm-reward':
+        return 'Mark reward as given';
+      case 'add-holiday':
+        return 'Add holiday to calendar';
+      case 'access-rewards':
+        return 'Access rewards tab';
+      case 'change-code':
+        return 'Change parent code';
+      default:
+        if (action.startsWith('adjust-points')) {
+          const behavior = action.replace('adjust-points-', '');
+          return `Record "${behavior}" behavior`;
+        }
+        return action;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm bg-white rounded-2xl">
@@ -49,7 +71,7 @@ const ParentCodeModal = ({ isOpen, onClose, onSuccess, action }: ParentCodeModal
               Enter parent code to continue
             </p>
             <p className="text-sm text-gray-500 bg-gray-50 p-2 rounded-lg">
-              Action: {action}
+              Action: {getActionDescription()}
             </p>
           </div>
           
@@ -86,10 +108,6 @@ const ParentCodeModal = ({ isOpen, onClose, onSuccess, action }: ParentCodeModal
             >
               Verify
             </Button>
-          </div>
-          
-          <div className="text-center text-xs text-gray-400">
-            Demo code: 1234
           </div>
         </div>
       </DialogContent>
