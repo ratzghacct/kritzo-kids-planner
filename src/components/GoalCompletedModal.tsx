@@ -8,19 +8,19 @@ interface Goal {
   id: string;
   title: string;
   reward: string;
-  targetPoints: number;
-  completed: boolean;
-  dateCompleted?: string;
+  pointsRequired: number;
+  isCompleted: boolean;
+  rewardGiven: boolean;
 }
 
 interface GoalCompletedModalProps {
   isOpen: boolean;
   onClose: () => void;
   goal: Goal;
-  onComplete: (markAsGiven: boolean) => void;
+  onGiveReward: () => void;
 }
 
-const GoalCompletedModal = ({ isOpen, onClose, goal, onComplete }: GoalCompletedModalProps) => {
+const GoalCompletedModal = ({ isOpen, onClose, goal, onGiveReward }: GoalCompletedModalProps) => {
   React.useEffect(() => {
     if (isOpen) {
       // Trigger confetti when modal is opened
@@ -52,29 +52,24 @@ const GoalCompletedModal = ({ isOpen, onClose, goal, onComplete }: GoalCompleted
           
           <div className="bg-yellow-50 p-4 rounded-lg text-center">
             <p className="text-yellow-700 font-medium">
-              What would you like to do with this reward?
+              Mark this goal as completed!
             </p>
           </div>
           
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex space-x-3">
             <Button
-              onClick={() => onComplete(true)}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl"
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 rounded-xl font-bold"
             >
-              Mark As Given
+              Cancel
             </Button>
             <Button
-              onClick={() => onComplete(false)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-xl"
+              onClick={onGiveReward}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold"
             >
-              Mark As Pending
+              Mark as Done
             </Button>
-          </div>
-          
-          <div className="text-center text-sm text-gray-500">
-            Choose "Mark As Given" if the reward has been provided.
-            <br />
-            Choose "Mark As Pending" if the reward will be given later.
           </div>
         </div>
       </DialogContent>

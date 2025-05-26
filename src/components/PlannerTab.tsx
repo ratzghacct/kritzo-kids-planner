@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { TrashIcon } from 'lucide-react';
 import ActivityCard from '@/components/ActivityCard';
 import AddActivityModal from '@/components/AddActivityModal';
 import AddHolidayModal from '@/components/AddHolidayModal';
+import DayClickModal from '@/components/DayClickModal';
 
 interface PlannerTabProps {
   username: string;
@@ -36,6 +36,8 @@ const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = fals
   const [viewType, setViewType] = useState('day');
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [showAddHoliday, setShowAddHoliday] = useState(false);
+  const [showDayClickModal, setShowDayClickModal] = useState(false);
+  const [clickedDay, setClickedDay] = useState<number>(1);
   const [isLocked, setIsLocked] = useState(false);
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[0]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -165,6 +167,15 @@ const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = fals
       onRequestParentAccess('add-holiday');
       // After parent code verification, show holiday modal if parent mode is active
     }
+  };
+
+  const handleDayClick = (day: number) => {
+    setClickedDay(day);
+    setShowDayClickModal(true);
+  };
+
+  const handleResetParentCode = () => {
+    onRequestParentAccess('change-code');
   };
 
   // Get activities for the current view
@@ -409,24 +420,17 @@ const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = fals
                 return (
                   <Card 
                     key={i} 
-                    className={`p-2 min-h-20 ${
+                    className={`p-2 min-h-20 cursor-pointer hover:bg-blue-50 ${
                       hasActivities ? 'bg-blue-50 border-2 border-blue-200' : 
                       dayHolidays.length > 0 ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-gray-50'
                     }`}
+                    onClick={() => handleDayClick(day)}
                   >
                     <div className="text-sm font-bold">{day}</div>
                     {dayHolidays.length > 0 && dayHolidays.map(holiday => (
-                      <div key={holiday.id} className="mt-1 relative group">
+                      <div key={holiday.id} className="mt-1">
                         <div className="text-lg">{holiday.icon}</div>
                         <div className="text-xs font-medium text-yellow-700">{holiday.name}</div>
-                        {isParentModeActive && (
-                          <button 
-                            onClick={() => removeHoliday(holiday.id)}
-                            className="absolute -right-1 -top-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100"
-                          >
-                            ×
-                          </button>
-                        )}
                       </div>
                     ))}
                     {hasActivities && (
@@ -464,6 +468,19 @@ const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = fals
         onAdd={addHoliday}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
+      />
+
+      <DayClickModal
+        isOpen={showDayClickModal}
+        onClose={() => setShowDayClickModal(false)}
+        selectedDay={clickedDay}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        holidays={holidays}
+        onAddHoliday={addHoliday}
+        onRemoveHoliday={removeHoliday}
+        onResetParentCode={handleResetParentCode}
+        isParentModeActive={isParentModeActive}
       />
     </div>
   );

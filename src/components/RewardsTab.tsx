@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -29,6 +28,11 @@ export interface Goal {
   rewardGiven: boolean;
 }
 
+export interface CompletedGoal extends Goal {
+  completedDate: string;
+  claimStatus: 'pending' | 'done';
+}
+
 export interface RewardsTabProps {
   username: string;
   onRequestParentAccess: (action: string) => void;
@@ -36,6 +40,7 @@ export interface RewardsTabProps {
 }
 
 const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess, isParentModeActive = false }) => {
+  // ... keep existing code (state declarations for behaviors)
   const [behaviors, setBehaviors] = useState<Behavior[]>([
     { id: '1', name: 'Clean Room', points: 10, icon: '🧹', type: 'positive' },
     { id: '2', name: 'Read a Book', points: 15, icon: '📚', type: 'positive' },
@@ -43,15 +48,29 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
     { id: '4', name: 'Late to Bed', points: -10, icon: '🌙', type: 'negative' },
     { id: '5', name: 'Bad Attitude', points: -15, icon: '😠', type: 'negative' },
   ]);
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: '101', title: 'New Toy', reward: 'Lego Set', pointsRequired: 100, isCompleted: false, rewardGiven: false },
-    { id: '102', title: 'Movie Night', reward: 'Watch a Movie', pointsRequired: 80, isCompleted: false, rewardGiven: false },
-  ]);
+
+  // Only keep one active goal
+  const [currentGoal, setCurrentGoal] = useState<Goal | null>(() => {
+    const saved = localStorage.getItem('currentGoal');
+    return saved ? JSON.parse(saved) : { 
+      id: '101', 
+      title: 'New Toy', 
+      reward: 'Lego Set', 
+      pointsRequired: 100, 
+      isCompleted: false, 
+      rewardGiven: false 
+    };
+  });
+
+  const [completedGoals, setCompletedGoals] = useState<CompletedGoal[]>(() => {
+    const saved = localStorage.getItem('completedGoals');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [points, setPoints] = useState(0);
   const [isAddBehaviorModalOpen, setIsAddBehaviorModalOpen] = useState(false);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isGoalCompletedModalOpen, setIsGoalCompletedModalOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [history, setHistory] = useState<string[]>([]);
 
   // Add Behavior Form State
@@ -61,25 +80,24 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
   const [newBehaviorType, setNewBehaviorType] = useState<'positive' | 'negative'>('positive');
 
   useEffect(() => {
-    // Load behaviors, goals, and points from local storage
+    // Load behaviors, current goal, completed goals, and points from local storage
     const savedBehaviors = localStorage.getItem('behaviors');
-    const savedGoals = localStorage.getItem('goals');
     const savedPoints = localStorage.getItem('points');
     const savedHistory = localStorage.getItem('history');
 
     if (savedBehaviors) setBehaviors(JSON.parse(savedBehaviors));
-    if (savedGoals) setGoals(JSON.parse(savedGoals));
     if (savedPoints) setPoints(parseInt(savedPoints || '0'));
     if (savedHistory) setHistory(JSON.parse(savedHistory || '[]'));
   }, []);
 
   useEffect(() => {
-    // Save behaviors, goals, and points to local storage
+    // Save to local storage
     localStorage.setItem('behaviors', JSON.stringify(behaviors));
-    localStorage.setItem('goals', JSON.stringify(goals));
+    localStorage.setItem('currentGoal', JSON.stringify(currentGoal));
+    localStorage.setItem('completedGoals', JSON.stringify(completedGoals));
     localStorage.setItem('points', points.toString());
     localStorage.setItem('history', JSON.stringify(history));
-  }, [behaviors, goals, points, history]);
+  }, [behaviors, currentGoal, completedGoals, points, history]);
 
   const adjustPoints = (behaviorPoints: number) => {
     const newPoints = points + behaviorPoints;
@@ -90,6 +108,11 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
       const action = behaviorPoints > 0 ? 'earned' : 'lost';
       const newHistoryEntry = `${username} ${action} ${Math.abs(behaviorPoints)} points for ${behavior.name}`;
       setHistory([newHistoryEntry, ...history]);
+    }
+
+    // Check if current goal is completed
+    if (currentGoal && newPoints >= currentGoal.pointsRequired && !currentGoal.isCompleted) {
+      setIsGoalCompletedModalOpen(true);
     }
   };
 
@@ -118,40 +141,43 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
   };
 
   const addGoal = (newGoal: Goal) => {
-    setGoals([...goals, newGoal]);
+    // Replace current goal with new goal
+    setCurrentGoal(newGoal);
     setIsGoalModalOpen(false);
   };
 
-  const completeGoal = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setIsGoalCompletedModalOpen(true);
-  };
+  const completeCurrentGoal = () => {
+    if (currentGoal) {
+      // Move current goal to completed goals
+      const completedGoal: CompletedGoal = {
+        ...currentGoal,
+        isCompleted: true,
+        rewardGiven: true,
+        completedDate: new Date().toLocaleDateString(),
+        claimStatus: 'done'
+      };
+      
+      setCompletedGoals([completedGoal, ...completedGoals]);
+      setPoints(points - currentGoal.pointsRequired);
 
-  const giveReward = () => {
-    if (selectedGoal) {
-      const updatedGoals = goals.map(g =>
-        g.id === selectedGoal.id ? { ...g, isCompleted: true, rewardGiven: true } : g
-      );
-      setGoals(updatedGoals);
-      setPoints(points - selectedGoal.pointsRequired);
-
-      const newHistoryEntry = `${username} claimed reward: ${selectedGoal.reward} for ${selectedGoal.pointsRequired} points`;
+      const newHistoryEntry = `${username} completed goal: ${currentGoal.title} for ${currentGoal.pointsRequired} points`;
       setHistory([newHistoryEntry, ...history]);
 
+      // Clear current goal
+      setCurrentGoal(null);
       setIsGoalCompletedModalOpen(false);
-      setSelectedGoal(null);
     }
   };
 
-  const resetGoal = (goal: Goal) => {
-    const updatedGoals = goals.map(g =>
-      g.id === goal.id ? { ...g, isCompleted: false, rewardGiven: false } : g
-    );
-    setGoals(updatedGoals);
+  const markCompletedGoalAsDone = (goalId: string) => {
+    setCompletedGoals(prev => prev.map(goal => 
+      goal.id === goalId ? { ...goal, claimStatus: 'done' } : goal
+    ));
   };
 
-  const calculateProgress = (goal: Goal) => {
-    return Math.min((points / goal.pointsRequired) * 100, 100);
+  const calculateProgress = () => {
+    if (!currentGoal) return 0;
+    return Math.min((points / currentGoal.pointsRequired) * 100, 100);
   };
 
   return (
@@ -166,7 +192,56 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
         </CardHeader>
       </Card>
 
-      {/* Behaviors Section */}
+      {/* Goals Section - Moved to first position */}
+      <Card className="shadow-kid-friendly">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-lg font-semibold">
+            <Award className="mr-2 inline-block h-5 w-5 text-primary" />
+            Current Goal
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setIsGoalModalOpen(true)}>
+            {currentGoal ? 'Change Goal' : 'Add Goal'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {currentGoal ? (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-md font-medium">{currentGoal.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Reward: {currentGoal.reward}</p>
+                <p className="text-sm text-muted-foreground">Points Required: {currentGoal.pointsRequired}</p>
+                <div className="mt-2">
+                  <Progress value={calculateProgress()} />
+                  <p className="text-xs text-center mt-1">
+                    {points}/{currentGoal.pointsRequired} points ({Math.round(calculateProgress())}%)
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <span className="text-sm">
+                  {points >= currentGoal.pointsRequired ? 'Ready to Claim!' : `${currentGoal.pointsRequired - points} points to go!`}
+                </span>
+                <Button 
+                  size="sm" 
+                  onClick={() => setIsGoalCompletedModalOpen(true)} 
+                  disabled={points < currentGoal.pointsRequired || isParentModeActive === false}
+                  className="bg-green-500 hover:bg-green-600"
+                >
+                  Claim Reward
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              No current goal set. Add a goal to get started!
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Behaviors Section - Moved to second position */}
       <Card className="shadow-kid-friendly">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold">
@@ -195,49 +270,6 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
         </CardContent>
       </Card>
 
-      {/* Goals Section */}
-      <Card className="shadow-kid-friendly">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">
-            <Award className="mr-2 inline-block h-5 w-5 text-primary" />
-            Goals
-          </CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setIsGoalModalOpen(true)}>
-            Add Goal
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[200px] w-full rounded-md">
-            <div className="space-y-4">
-              {goals.map((goal) => (
-                <Card key={goal.id} className="shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-md font-medium">{goal.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">Reward: {goal.reward}</p>
-                    <p className="text-sm text-muted-foreground">Points Required: {goal.pointsRequired}</p>
-                    <Progress value={calculateProgress(goal)} />
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <span>{points >= goal.pointsRequired ? 'Ready to Claim!' : `${goal.pointsRequired - points} points to go!`}</span>
-                    {goal.isCompleted ? (
-                      <Button variant="secondary" size="sm" onClick={() => resetGoal(goal)} disabled={isParentModeActive === false}>
-                        Reset Goal
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={() => completeGoal(goal)} disabled={points < goal.pointsRequired || isParentModeActive === false}>
-                        Claim Reward
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
       {/* History Section */}
       <Card className="shadow-kid-friendly">
         <CardHeader>
@@ -247,8 +279,41 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[150px] w-full rounded-md">
+          <ScrollArea className="h-[200px] w-full rounded-md">
             <div className="space-y-2">
+              {/* Completed Goals */}
+              {completedGoals.map((goal) => (
+                <Card key={goal.id} className="p-3 bg-green-50 border-green-200">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-green-800">🏆 Goal: {goal.title}</p>
+                      <p className="text-sm text-green-600">Reward: {goal.reward}</p>
+                      <p className="text-xs text-green-500">Completed: {goal.completedDate}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-green-700">Status: Done</div>
+                      <div className="text-xs">
+                        Claim: {goal.claimStatus === 'done' ? (
+                          <span className="text-green-600 font-medium">✓ Done</span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => markCompletedGoalAsDone(goal.id)}
+                            className="h-6 text-xs"
+                            disabled={!isParentModeActive}
+                          >
+                            Mark Done
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Separator className="my-2" />
+                </Card>
+              ))}
+              
+              {/* Regular History */}
               {history.map((entry, index) => (
                 <div key={index} className="text-sm">
                   {entry}
@@ -339,12 +404,12 @@ const RewardsTab: React.FC<RewardsTabProps> = ({ username, onRequestParentAccess
       />
 
       {/* Goal Completed Modal */}
-      {selectedGoal && (
+      {currentGoal && (
         <GoalCompletedModal
           isOpen={isGoalCompletedModalOpen}
           onClose={() => setIsGoalCompletedModalOpen(false)}
-          goal={selectedGoal}
-          onGiveReward={giveReward}
+          goal={currentGoal}
+          onGiveReward={completeCurrentGoal}
         />
       )}
     </div>
