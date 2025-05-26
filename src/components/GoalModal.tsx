@@ -9,34 +9,39 @@ interface Goal {
   id: string;
   title: string;
   reward: string;
-  targetPoints: number;
-  completed: boolean;
-  dateCompleted?: string;
-  rewardPassed?: boolean;
+  pointsRequired: number;
+  isCompleted: boolean;
+  rewardGiven: boolean;
 }
 
 interface GoalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentGoal: Goal;
-  onSaveGoal: (goal: Goal) => void;
+  onAddGoal: (goal: Goal) => void;
 }
 
-const GoalModal = ({ isOpen, onClose, currentGoal, onSaveGoal }: GoalModalProps) => {
-  const [title, setTitle] = useState(currentGoal.title);
-  const [reward, setReward] = useState(currentGoal.reward);
-  const [targetPoints, setTargetPoints] = useState(currentGoal.targetPoints.toString());
+const GoalModal = ({ isOpen, onClose, onAddGoal }: GoalModalProps) => {
+  const [title, setTitle] = useState('');
+  const [reward, setReward] = useState('');
+  const [pointsRequired, setPointsRequired] = useState('30');
 
   const handleSave = () => {
-    onSaveGoal({
-      ...currentGoal,
+    const newGoal: Goal = {
+      id: Date.now().toString(),
       title,
       reward,
-      targetPoints: parseInt(targetPoints) || 30,
-      completed: false,
-      dateCompleted: undefined,
-      rewardPassed: undefined,
-    });
+      pointsRequired: parseInt(pointsRequired) || 30,
+      isCompleted: false,
+      rewardGiven: false,
+    };
+    
+    onAddGoal(newGoal);
+    
+    // Reset form
+    setTitle('');
+    setReward('');
+    setPointsRequired('30');
+    
     onClose();
   };
 
@@ -78,13 +83,13 @@ const GoalModal = ({ isOpen, onClose, currentGoal, onSaveGoal }: GoalModalProps)
           
           <div className="space-y-2">
             <Label htmlFor="points" className="text-sm font-bold text-gray-700">
-              Target Points
+              Points Required
             </Label>
             <Input
               id="points"
               type="number"
-              value={targetPoints}
-              onChange={(e) => setTargetPoints(e.target.value)}
+              value={pointsRequired}
+              onChange={(e) => setPointsRequired(e.target.value)}
               placeholder="30"
               className="rounded-xl border-2 border-gray-200 focus:border-purple-400"
             />
@@ -101,6 +106,7 @@ const GoalModal = ({ isOpen, onClose, currentGoal, onSaveGoal }: GoalModalProps)
             <Button
               onClick={handleSave}
               className="flex-1 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-bold"
+              disabled={!title.trim() || !reward.trim()}
             >
               Save Goal
             </Button>

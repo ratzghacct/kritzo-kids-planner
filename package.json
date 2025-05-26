@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/baloo-2": "^5.2.5",
     "@fontsource/poppins": "^5.0.8",
     "@fontsource/quicksand": "^5.0.16",
     "@hookform/resolvers": "^3.9.0",
