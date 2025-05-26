@@ -189,7 +189,7 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
   return <div className="flex flex-col space-y-4 p-4">
       {/* Points Display */}
       <Card className="bg-gradient-pastel shadow-kid-friendly">
-        <CardHeader>
+        <CardHeader className="">
           <CardTitle className="text-xl font-semibold">
             <TrendingUp className="mr-2 inline-block h-5 w-5 text-primary" />
             Current Points: {points}
