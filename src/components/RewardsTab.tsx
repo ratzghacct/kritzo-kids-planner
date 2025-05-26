@@ -7,10 +7,12 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BehaviorCard from './BehaviorCard';
 import GoalModal from './GoalModal';
 import GoalCompletedModal from './GoalCompletedModal';
 import { PlusCircle, TrendingUp, Award, History } from 'lucide-react';
+
 export interface Behavior {
   id: string;
   name: string;
@@ -35,6 +37,7 @@ export interface RewardsTabProps {
   onRequestParentAccess: (action: string) => void;
   isParentModeActive?: boolean;
 }
+
 const RewardsTab: React.FC<RewardsTabProps> = ({
   username,
   onRequestParentAccess,
@@ -137,9 +140,11 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
     }
   };
   const addBehavior = () => {
+    if (!newBehaviorName.trim()) return;
+    
     const newBehavior: Behavior = {
       id: Date.now().toString(),
-      name: newBehaviorName,
+      name: newBehaviorName.trim(),
       points: parseInt(newBehaviorPoints) * (newBehaviorType === 'negative' ? -1 : 1),
       icon: newBehaviorIcon,
       type: newBehaviorType
@@ -249,14 +254,27 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
             <PlusCircle className="mr-2 inline-block h-5 w-5 text-primary" />
             Behaviors
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setIsAddBehaviorModalOpen(true)}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsAddBehaviorModalOpen(true)}
+          >
             Add Behavior
           </Button>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[200px] w-full rounded-md">
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {behaviors.map(behavior => <BehaviorCard key={behavior.id} behavior={behavior} onAdjustPoints={adjustPoints} onRequestParentAccess={onRequestParentAccess} onRemove={removeBehavior} isParentModeActive={isParentModeActive} />)}
+              {behaviors.map(behavior => (
+                <BehaviorCard 
+                  key={behavior.id} 
+                  behavior={behavior} 
+                  onAdjustPoints={adjustPoints} 
+                  onRequestParentAccess={onRequestParentAccess} 
+                  onRemove={removeBehavior} 
+                  isParentModeActive={isParentModeActive} 
+                />
+              ))}
             </div>
           </ScrollArea>
         </CardContent>
@@ -346,55 +364,102 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
       </Card>
 
       {/* Add Behavior Modal */}
-      {isAddBehaviorModalOpen && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md p-6 bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-center">Add New Behavior</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="behaviorName">Behavior Name</Label>
-                <Input id="behaviorName" value={newBehaviorName} onChange={e => setNewBehaviorName(e.target.value)} placeholder="e.g., Clean Room" />
+      <Dialog open={isAddBehaviorModalOpen} onOpenChange={setIsAddBehaviorModalOpen}>
+        <DialogContent className="max-w-md bg-white rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">Add New Behavior</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 p-6">
+            <div className="space-y-2">
+              <Label htmlFor="behaviorName">Behavior Name</Label>
+              <Input 
+                id="behaviorName" 
+                value={newBehaviorName} 
+                onChange={(e) => setNewBehaviorName(e.target.value)} 
+                placeholder="e.g., Clean Room" 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="behaviorPoints">Points</Label>
+              <Input 
+                id="behaviorPoints" 
+                type="number" 
+                value={newBehaviorPoints} 
+                onChange={(e) => setNewBehaviorPoints(e.target.value)} 
+                placeholder="10" 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="behaviorIcon">Icon</Label>
+              <Input 
+                id="behaviorIcon" 
+                value={newBehaviorIcon} 
+                onChange={(e) => setNewBehaviorIcon(e.target.value)} 
+                placeholder="😊" 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <div className="flex space-x-2">
+                <Button 
+                  variant={newBehaviorType === 'positive' ? 'default' : 'outline'} 
+                  onClick={() => setNewBehaviorType('positive')} 
+                  className="flex-1"
+                  type="button"
+                >
+                  Positive
+                </Button>
+                <Button 
+                  variant={newBehaviorType === 'negative' ? 'default' : 'outline'} 
+                  onClick={() => setNewBehaviorType('negative')} 
+                  className="flex-1"
+                  type="button"
+                >
+                  Negative
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="behaviorPoints">Points</Label>
-                <Input id="behaviorPoints" type="number" value={newBehaviorPoints} onChange={e => setNewBehaviorPoints(e.target.value)} placeholder="10" />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="behaviorIcon">Icon</Label>
-                <Input id="behaviorIcon" value={newBehaviorIcon} onChange={e => setNewBehaviorIcon(e.target.value)} placeholder="😊" />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <div className="flex space-x-2">
-                  <Button variant={newBehaviorType === 'positive' ? 'default' : 'outline'} onClick={() => setNewBehaviorType('positive')} className="flex-1">
-                    Positive
-                  </Button>
-                  <Button variant={newBehaviorType === 'negative' ? 'default' : 'outline'} onClick={() => setNewBehaviorType('negative')} className="flex-1">
-                    Negative
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex space-x-2">
-              <Button variant="outline" onClick={() => setIsAddBehaviorModalOpen(false)} className="flex-1">
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAddBehaviorModalOpen(false)} 
+                className="flex-1"
+              >
                 Cancel
               </Button>
-              <Button onClick={addBehavior} disabled={!newBehaviorName.trim()} className="flex-1">
+              <Button 
+                onClick={addBehavior} 
+                disabled={!newBehaviorName.trim()} 
+                className="flex-1"
+              >
                 Add Behavior
               </Button>
-            </CardFooter>
-          </Card>
-        </div>}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Goal Modal */}
-      <GoalModal isOpen={isGoalModalOpen} onClose={() => setIsGoalModalOpen(false)} onAddGoal={addGoal} />
+      <GoalModal 
+        isOpen={isGoalModalOpen} 
+        onClose={() => setIsGoalModalOpen(false)} 
+        onAddGoal={addGoal} 
+      />
 
       {/* Goal Completed Modal */}
-      {currentGoal && <GoalCompletedModal isOpen={isGoalCompletedModalOpen} onClose={() => setIsGoalCompletedModalOpen(false)} goal={currentGoal} onGiveReward={completeCurrentGoal} />}
+      {currentGoal && (
+        <GoalCompletedModal 
+          isOpen={isGoalCompletedModalOpen} 
+          onClose={() => setIsGoalCompletedModalOpen(false)} 
+          goal={currentGoal} 
+          onGiveReward={completeCurrentGoal} 
+        />
+      )}
     </div>;
 };
 export default RewardsTab;
