@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import BehaviorCard from './BehaviorCard';
 import GoalModal from './GoalModal';
 import GoalCompletedModal from './GoalCompletedModal';
@@ -99,6 +100,8 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
   const [newBehaviorPoints, setNewBehaviorPoints] = useState('10');
   const [newBehaviorIcon, setNewBehaviorIcon] = useState('😊');
   const [newBehaviorType, setNewBehaviorType] = useState<'positive' | 'negative'>('positive');
+  
+  // ... keep existing code (useEffect hooks)
   useEffect(() => {
     // Load behaviors, current goal, completed goals, and points from local storage
     const savedBehaviors = localStorage.getItem('behaviors');
@@ -116,6 +119,8 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
     localStorage.setItem('points', points.toString());
     localStorage.setItem('history', JSON.stringify(history));
   }, [behaviors, currentGoal, completedGoals, points, history]);
+
+  // ... keep existing code (adjustPoints, addBehavior, removeBehavior, addGoal functions)
   const adjustPoints = (behaviorPoints: number) => {
     const newPoints = points + behaviorPoints;
     setPoints(newPoints);
@@ -164,7 +169,7 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
         isCompleted: true,
         rewardGiven: true,
         completedDate: new Date().toLocaleDateString(),
-        claimStatus: 'done'
+        claimStatus: 'pending'
       };
       setCompletedGoals([completedGoal, ...completedGoals]);
       setPoints(points - currentGoal.pointsRequired);
@@ -257,7 +262,7 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* History Section */}
+      {/* History Section - Redesigned */}
       <Card className="shadow-kid-friendly">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">
@@ -266,33 +271,75 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[200px] w-full rounded-md">
-            <div className="space-y-2">
+          <ScrollArea className="h-[300px] w-full rounded-md">
+            <div className="space-y-4">
               {/* Completed Goals */}
-              {completedGoals.map(goal => <Card key={goal.id} className="p-3 bg-green-50 border-green-200">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-green-800">🏆 Goal: {goal.title}</p>
-                      <p className="text-sm text-green-600">Reward: {goal.reward}</p>
-                      <p className="text-xs text-green-500">Completed: {goal.completedDate}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-green-700">Status: Done</div>
-                      <div className="text-xs">
-                        Claim: {goal.claimStatus === 'done' ? <span className="text-green-600 font-medium">✓ Done</span> : <Button size="sm" variant="outline" onClick={() => markCompletedGoalAsDone(goal.id)} className="h-6 text-xs" disabled={!isParentModeActive}>
-                            Mark Done
-                          </Button>}
+              {completedGoals.map(goal => (
+                <Card key={goal.id} className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🏆</span>
+                          <h3 className="text-lg font-bold text-green-800">{goal.title}</h3>
+                        </div>
+                        <div className="space-y-1 ml-8">
+                          <p className="text-sm">
+                            <span className="font-bold text-green-700">Reward:</span>{" "}
+                            <span className="font-bold text-blue-600">{goal.reward}</span>
+                          </p>
+                          <p className="text-xs text-green-600">
+                            Completed: {goal.completedDate} • Points: {goal.pointsRequired}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-2">
+                        <Badge 
+                          variant={goal.claimStatus === 'done' ? 'default' : 'secondary'}
+                          className={goal.claimStatus === 'done' ? 'bg-green-600' : 'bg-orange-500'}
+                        >
+                          {goal.claimStatus === 'done' ? 'Claimed' : 'Pending'}
+                        </Badge>
                       </div>
                     </div>
+                    
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-green-200">
+                      <p className="text-sm font-medium text-green-700">
+                        <span className="font-bold">Claim Status:</span>{" "}
+                        {goal.claimStatus === 'done' ? (
+                          <span className="text-green-600 font-bold">✓ Reward Given</span>
+                        ) : (
+                          <span className="text-orange-600 font-bold">⏳ Waiting for Reward</span>
+                        )}
+                      </p>
+                      {goal.claimStatus === 'pending' && isParentModeActive && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => markCompletedGoalAsDone(goal.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                        >
+                          Mark as Given
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <Separator className="my-2" />
-                </Card>)}
+                </Card>
+              ))}
               
               {/* Regular History */}
-              {history.map((entry, index) => <div key={index} className="text-sm">
-                  {entry}
-                  <Separator className="my-2" />
-                </div>)}
+              {history.map((entry, index) => (
+                <Card key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 font-medium">{entry}</p>
+                </Card>
+              ))}
+              
+              {/* Empty state */}
+              {completedGoals.length === 0 && history.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <History className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                  <p>No history yet. Start completing behaviors and goals!</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>

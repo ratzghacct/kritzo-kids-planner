@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,12 @@ const holidayOptions = [
   { name: "Vacation", icon: "🏝️" },
   { name: "Doctor's Visit", icon: "👩‍⚕️" },
   { name: "Special Event", icon: "🎊" },
+  { name: "Christmas", icon: "🎄" },
+  { name: "Halloween", icon: "🎃" },
+  { name: "Easter", icon: "🐰" },
+  { name: "New Year", icon: "🎆" },
+  { name: "Thanksgiving", icon: "🦃" },
+  { name: "Valentine's Day", icon: "💝" },
 ];
 
 const DayClickModal = ({ 
@@ -49,6 +56,7 @@ const DayClickModal = ({
   const [selectedHolidayIndex, setSelectedHolidayIndex] = useState<number | null>(null);
   const [customHoliday, setCustomHoliday] = useState('');
   const [customIcon, setCustomIcon] = useState('🎊');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const selectedDate = new Date(selectedYear, selectedMonth, selectedDay);
   const dayHolidays = holidays.filter(holiday => {
@@ -58,42 +66,42 @@ const DayClickModal = ({
            holidayDate.getFullYear() === selectedYear;
   });
 
-  const handleAddHoliday = () => {
-    let holidayName: string;
-    let holidayIcon: string;
-    
-    if (selectedHolidayIndex !== null) {
-      holidayName = holidayOptions[selectedHolidayIndex].name;
-      holidayIcon = holidayOptions[selectedHolidayIndex].icon;
-    } else if (customHoliday) {
-      holidayName = customHoliday;
-      holidayIcon = customIcon;
-    } else {
-      return;
-    }
-    
+  const handleSelectHoliday = (index: number) => {
+    const holiday = holidayOptions[index];
     onAddHoliday({
-      name: holidayName,
+      name: holiday.name,
       date: selectedDate.toLocaleDateString(),
-      icon: holidayIcon
+      icon: holiday.icon
     });
-    
-    // Reset form
     setSelectedHolidayIndex(null);
-    setCustomHoliday('');
-    setCustomIcon('🎊');
+  };
+
+  const handleAddCustomHoliday = () => {
+    if (customHoliday.trim()) {
+      onAddHoliday({
+        name: customHoliday,
+        date: selectedDate.toLocaleDateString(),
+        icon: customIcon
+      });
+      
+      // Reset form
+      setCustomHoliday('');
+      setCustomIcon('🎊');
+      setShowAddForm(false);
+    }
   };
 
   const handleClose = () => {
     setSelectedHolidayIndex(null);
     setCustomHoliday('');
     setCustomIcon('🎊');
+    setShowAddForm(false);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-white rounded-2xl">
+      <DialogContent className="max-w-md bg-white rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-purple-700">
             📅 {selectedDate.toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -107,10 +115,10 @@ const DayClickModal = ({
               <Label className="text-sm font-bold text-gray-700">Holidays on this day:</Label>
               <div className="space-y-2 mt-2">
                 {dayHolidays.map((holiday) => (
-                  <div key={holiday.id} className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xl">{holiday.icon}</span>
-                      <span className="font-medium">{holiday.name}</span>
+                  <div key={holiday.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl border border-yellow-200">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{holiday.icon}</span>
+                      <span className="font-bold text-yellow-800">{holiday.name}</span>
                     </div>
                     {isParentModeActive && (
                       <Button 
@@ -128,56 +136,65 @@ const DayClickModal = ({
             </div>
           )}
 
-          {/* Add Holiday Section */}
+          {/* Holiday Selection */}
           {isParentModeActive && (
             <div>
-              <Label className="text-sm font-bold text-gray-700">Mark as Holiday</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              <Label className="text-lg font-bold text-gray-700 mb-3 block">Select Holiday Type</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
                 {holidayOptions.map((option, index) => (
                   <Button
                     key={index}
                     type="button"
-                    onClick={() => {
-                      setSelectedHolidayIndex(index);
-                      setCustomHoliday('');
-                    }}
-                    variant={selectedHolidayIndex === index ? "default" : "outline"}
-                    className="h-16 flex flex-col items-center justify-center p-1 text-xs rounded-xl"
+                    onClick={() => handleSelectHoliday(index)}
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center p-2 text-xs rounded-xl border-2 hover:border-purple-300 hover:bg-purple-50"
                   >
-                    <span className="text-xl mb-1">{option.icon}</span>
-                    <span className="text-xs font-medium text-center">{option.name}</span>
+                    <span className="text-2xl mb-1">{option.icon}</span>
+                    <span className="text-xs font-bold text-center leading-tight">{option.name}</span>
                   </Button>
                 ))}
               </div>
               
-              <div className="pt-3">
-                <Label className="text-sm font-bold text-gray-700">Or Custom Holiday</Label>
-                <div className="flex mt-2 gap-2">
-                  <Input
-                    value={customHoliday}
-                    onChange={(e) => {
-                      setCustomHoliday(e.target.value);
-                      setSelectedHolidayIndex(null);
-                    }}
-                    placeholder="Custom holiday name"
-                    className="rounded-xl"
-                  />
-                  <Input
-                    value={customIcon}
-                    onChange={(e) => setCustomIcon(e.target.value)}
-                    maxLength={2}
-                    className="w-16 text-center text-2xl rounded-xl"
-                  />
-                </div>
-              </div>
+              <Separator className="my-4" />
               
+              {/* Add Holiday Button */}
               <Button
-                onClick={handleAddHoliday}
-                disabled={selectedHolidayIndex === null && !customHoliday}
-                className="w-full mt-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold"
+                onClick={() => setShowAddForm(!showAddForm)}
+                variant="outline"
+                className="w-full h-12 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 rounded-xl font-bold"
               >
-                Add Holiday
+                {showAddForm ? '❌ Cancel Custom' : '➕ Add Custom Holiday'}
               </Button>
+              
+              {/* Custom Holiday Form */}
+              {showAddForm && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <Label className="text-sm font-bold text-blue-700 mb-2 block">Custom Holiday</Label>
+                  <div className="space-y-3">
+                    <Input
+                      value={customHoliday}
+                      onChange={(e) => setCustomHoliday(e.target.value)}
+                      placeholder="Holiday name"
+                      className="rounded-xl border-blue-300"
+                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={customIcon}
+                        onChange={(e) => setCustomIcon(e.target.value)}
+                        maxLength={2}
+                        className="w-16 text-center text-2xl rounded-xl border-blue-300"
+                      />
+                      <Button
+                        onClick={handleAddCustomHoliday}
+                        disabled={!customHoliday.trim()}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                      >
+                        Add Holiday
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <Separator className="my-4" />
             </div>
@@ -200,7 +217,7 @@ const DayClickModal = ({
           <div className="flex space-x-3 pt-2">
             <Button
               onClick={handleClose}
-              className="flex-1 rounded-xl font-bold"
+              className="flex-1 rounded-xl font-bold bg-gray-600 hover:bg-gray-700"
             >
               Close
             </Button>
