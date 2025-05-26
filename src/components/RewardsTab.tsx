@@ -224,7 +224,7 @@ const RewardsTab: React.FC<RewardsTabProps> = ({
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between items-center">
-                <span className="text-sm">
+                <span className="text-sm font-semibold text-red-500">
                   {points >= currentGoal.pointsRequired ? 'Ready to Claim!' : `${currentGoal.pointsRequired - points} points to go!`}
                 </span>
                 <Button size="sm" onClick={() => setIsGoalCompletedModalOpen(true)} disabled={points < currentGoal.pointsRequired || isParentModeActive === false} className="bg-green-500 hover:bg-green-600">
