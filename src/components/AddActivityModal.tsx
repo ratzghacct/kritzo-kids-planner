@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -134,16 +134,19 @@ const AddActivityModal = ({ isOpen, onClose, onAdd, showTimeSelector = false }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-white rounded-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl bg-white rounded-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-purple-700">
             🎯 Choose an Activity
           </DialogTitle>
+          <DialogDescription className="text-center text-gray-600">
+            Select an activity from the categories below to add to your schedule
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <ScrollArea className="max-h-96">
-            <div className="space-y-4">
+        <div className="space-y-4 flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 pr-4">
               {categories.map(category => {
                 const categoryActivities = predefinedActivities.filter(activity => activity.category === category);
                 return (
@@ -184,7 +187,7 @@ const AddActivityModal = ({ isOpen, onClose, onAdd, showTimeSelector = false }: 
           </ScrollArea>
           
           {showTimeSelector && (
-            <div className="space-y-2">
+            <div className="space-y-2 flex-shrink-0">
               <Label htmlFor="time" className="text-sm font-bold text-gray-700">
                 Select Time
               </Label>
@@ -201,7 +204,7 @@ const AddActivityModal = ({ isOpen, onClose, onAdd, showTimeSelector = false }: 
             </div>
           )}
           
-          <div className="flex space-x-3">
+          <div className="flex space-x-3 flex-shrink-0">
             <Button
               onClick={onClose}
               variant="outline"
