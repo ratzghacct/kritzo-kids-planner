@@ -444,13 +444,6 @@ const PlannerTab = ({ username, onRequestParentAccess, isParentModeActive = fals
                 );
               })}
             </div>
-            
-            <Button
-              onClick={requestAddHoliday}
-              className="w-full h-12 text-md font-bold rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white shadow-md"
-            >
-              🎊 Add Holiday {isParentModeActive ? '' : '(Parent)'}
-            </Button>
           </div>
         )}
       </Card>

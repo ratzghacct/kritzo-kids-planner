@@ -28,14 +28,12 @@ const BehaviorCard = ({
   isParentModeActive = false
 }: BehaviorCardProps) => {
   const handleClick = () => {
-    if (isParentModeActive) {
-      // If parent mode is active, adjust points directly
-      onAdjustPoints(behavior.points);
-    } else {
+    // Always adjust points when behavior is clicked
+    onAdjustPoints(behavior.points);
+    
+    // Request parent access for tracking but don't block the action
+    if (!isParentModeActive) {
       onRequestParentAccess(`adjust-points-${behavior.name}`);
-      // For demo purposes, we'll adjust points immediately
-      // In a real app, this would happen after parent code verification
-      setTimeout(() => onAdjustPoints(behavior.points), 100);
     }
   };
 

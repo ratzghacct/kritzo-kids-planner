@@ -68,26 +68,34 @@ const DayClickModal = ({
 
   const handleSelectHoliday = (index: number) => {
     const holiday = holidayOptions[index];
+    const formattedDate = `${selectedMonth + 1}/${selectedDay}/${selectedYear}`;
+    
     onAddHoliday({
       name: holiday.name,
-      date: selectedDate.toLocaleDateString(),
+      date: formattedDate,
       icon: holiday.icon
     });
+    
+    // Reset state and close modal
     setSelectedHolidayIndex(null);
+    handleClose();
   };
 
   const handleAddCustomHoliday = () => {
     if (customHoliday.trim()) {
+      const formattedDate = `${selectedMonth + 1}/${selectedDay}/${selectedYear}`;
+      
       onAddHoliday({
         name: customHoliday,
-        date: selectedDate.toLocaleDateString(),
+        date: formattedDate,
         icon: customIcon
       });
       
-      // Reset form
+      // Reset form and close modal
       setCustomHoliday('');
       setCustomIcon('🎊');
       setShowAddForm(false);
+      handleClose();
     }
   };
 
